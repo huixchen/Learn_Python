@@ -172,3 +172,33 @@ print(aaa(["zone", "abigail", "theta", "form", "libe", "zas"], 2))
 
 
 
+##########################################
+# Challenge 7 Simple Pig Latin 
+##########################################
+# Move the first letter of each word to the end of it, then add 'ay' to the end of the word.
+# 
+# pig_it('Pig latin is cool') # igPay atinlay siay oolcay
+
+
+#This one is not so good, look at other solutions !!!
+def pig_it(string):
+    result = []
+    new_result = []
+    string = string.split()
+    for char in string:
+        x = list(char)
+        y = x[1:len(x)]
+        z = x[0:1]
+        q = y+z
+        result.append(q)
+    for index in result:
+        for xxxx in index:
+            if xxxx.isalnum():
+                m = index + ['a','y']
+                m = ''.join(m)
+            else: 
+                m = index
+                m = ''.join(m)
+        new_result.append(m)
+        result = ' '.join(new_result)
+    return result
