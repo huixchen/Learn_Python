@@ -180,7 +180,8 @@ print(aaa(["zone", "abigail", "theta", "form", "libe", "zas"], 2))
 # pig_it('Pig latin is cool') # igPay atinlay siay oolcay
 
 
-#This one is not so good, look at other solutions !!!
+#This one is not so good, look at other solutions !!! 
+# String.split() could be applied !
 def pig_it(string):
     result = []
     new_result = []
