@@ -203,3 +203,84 @@ def pig_it(string):
         new_result.append(m)
         result = ' '.join(new_result)
     return result
+
+
+##########################################
+# Challenge 8 Sum of pairs
+##########################################
+# Given a list of integers and a single sum value, return the first two values (parse from the left please) in order of appearance that add up to form the sum.
+# 
+# sum_pairs([11, 3, 7, 5],         10)
+# #              ^--^      3 + 7 = 10
+# == [3, 7]
+# 
+# sum_pairs([4, 3, 2, 3, 4],         6)
+# #          ^-----^         4 + 2 = 6, indices: 0, 2 *
+# #             ^-----^      3 + 3 = 6, indices: 1, 3
+# #                ^-----^   2 + 4 = 6, indices: 2, 4
+# #  * entire pair is earlier, and therefore is the correct answer
+# == [4, 2]
+# 
+# sum_pairs([0, 0, -2, 3], 2)
+# #  there are no pairs of values that can be added to produce 2.
+# == None/nil/undefined (Based on the language)
+# 
+# sum_pairs([10, 5, 2, 3, 7, 5],         10)
+# #              ^-----------^   5 + 5 = 10, indices: 1, 5
+# #                    ^--^      3 + 7 = 10, indices: 3, 4 *
+# #  * entire pair is earlier, and therefore is the correct answer
+# == [3, 7]
+# Negative numbers and duplicate numbers can and will appear.
+# 
+# NOTE: There will also be lists tested of lengths upwards of 10,000,000 elements. Be sure your code doesn't time out.
+
+
+#原版，效率太差，无法通过
+def sum_pairs(ints, s):
+    x = len(ints)
+    result = []
+    for i in range(0, x):
+        for z in range(0,i):
+            if ints[i] + ints[z] == s:
+                result = [ints[z], ints[i]]
+                return result
+    if len(result) == 0:
+        return None
+
+#网上找到的dict版本
+def sum_pairs(ints, s):
+    map = {}
+    n = len(ints)
+    index1 = n
+    index2 = n
+    checked = set()
+    
+    for i in range(n):
+        map[ints[i]] = i
+    
+    m = n
+    i = 0
+    while i < m:
+        num = ints[i]
+        dif = s - num
+        if dif in map and map[dif] != i and num not in checked:
+            checked.add(dif)
+            j = map[dif]
+            if j < index2:
+                index1 = i
+                index2 = j
+                m = j
+        i += 1
+    
+    if index1 >= n or index2 >= n:
+        return None
+    
+    return [ints[index1], ints[index2]]
+
+#智商碾压版
+def sum_pairs(lst, s):
+    cache = set()
+    for i in lst:
+        if s - i in cache:
+            return [s - i, i]
+        cache.add(i)
