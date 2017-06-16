@@ -284,3 +284,65 @@ def sum_pairs(lst, s):
         if s - i in cache:
             return [s - i, i]
         cache.add(i)
+
+
+        
+##########################################
+# Challenge 9 Parse HTML/CSS Colors
+##########################################
+# In this kata you parse RGB colors represented by strings. The formats are primarily used in HTML and CSS. Your task is to implement a function which takes a color as a string and returns the parsed color as a map (see Examples).
+# 
+# Input:
+# 
+# The input string represents one of the following:
+# 
+# 6-digit hexadecimal - "#RRGGBB"
+# e.g. "#012345", "#789abc", "#FFA077"
+# Each pair of digits represents a value of the channel in hexadecimal: 00 to FF
+# 3-digit hexadecimal - "#RGB"
+# e.g. "#012", "#aaa", "#F5A"
+# Each digit represents a value 0 to F which translates to 2-digit hexadecimal: 0->00, 1->11, 2->22, and so on.
+# Preset color name
+# e.g. "red", "BLUE", "LimeGreen"
+# You have to use the predefined map PRESET_COLORS (JavaScript, Python, Ruby), presetColors (Java, C#, Haskell), or preset-colors (Clojure). The keys are the names of preset colors in lower-case and the values are the corresponding colors in 6-digit hexadecimal (same as 1. "#RRGGBB").
+# Examples:
+# 
+# parse_html_color('#80FFA0')   # => {'r': 128, 'g': 255, 'b': 160}
+# parse_html_color('#3B7')      # => {'r': 51,  'g': 187, 'b': 119}
+# parse_html_color('LimeGreen') # => {'r': 50,  'g': 205, 'b': 50 }
+
+def parse_html_color(color):
+    if color[0] == '#':
+        if len(color) == 7:
+            new_color = color[1:7]
+            r = int(new_color[0:2],16)
+            g = int(new_color[2:4],16)
+            b = int(new_color[4:6],16)
+        elif len(color) == 4:
+            new_color = color[1:4]
+            r = str(new_color[0])*2
+            g = str(new_color[1])*2
+            b = str(new_color[2])*2
+            r = int(r,16)
+            g = int(g,16)
+            b = int(b,16)        
+        return {'r' : r, 'g': g, 'b':b}
+    else:
+        color = color.lower()
+        color = PRESET_COLORS[color]
+        new_color = color[1:7]
+        r = int(new_color[0:2],16)
+        g = int(new_color[2:4],16)
+        b = int(new_color[4:6],16)
+    return {'r' : r, 'g': g, 'b':b}
+
+# Use try to solve it much easier
+def parse_html_color(color):
+    try:
+        color = PRESET_COLORS[color.lower()]
+    except:
+        pass
+    if color[0] == '#' and len(color) == 7:
+        return {'r': int(color[1:3], 16), 'g': int(color[3:5], 16), 'b': int(color[5:7], 16)}
+    else:
+        return {'r': int(color[1]*2, 16), 'g': int(color[2]*2, 16), 'b': int(color[3]*2, 16)}
