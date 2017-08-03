@@ -2,16 +2,16 @@ import orm
 from model import User, Blog, Comment
 import asyncio
 
-#async def test():
-#    await orm.create_pool(loop=loop, user='root', password='', db='awesome')
-#
-#    u = User(name='Tdestad', email='dtedst@aad', passwd='d12ad31', image='addaa')
-#
-#    await u.save()
-#    r = await User.findAll()
-#    await orm.close_pool()
-#    print(r)
-#
+async def test():
+    await orm.create_pool(loop=loop, user='root', password='168859', db='awesome')
+
+    u = User(name='Tdedafastad', email='dtefasdst@aad', passwd='d12ad31', image='addaa')
+
+    await u.save()
+    r = await User.findAll()
+    await orm.close_pool()
+    print(r)
+
 #async def remove():
 #    await orm.create_pool(loop=loop, user='root', password='', db='awesome')
 #
@@ -30,5 +30,5 @@ import asyncio
 
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(update())
+loop.run_until_complete(test())
 loop.close()
