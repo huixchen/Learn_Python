@@ -138,6 +138,9 @@ class RequestHandler(object):
     async def __call__(self, request):
         # a little confused about what request is
         # and where does the function like `content_type`, `json` from
+        # answer:
+        # request is one object or class of aiohttp.web, it has these functions
+        # request would be passed in add_route()
         kw = None
         if (self._has_var_kw_arg or self._has_named_kw_arg
                 or self._get_required_kw_args):
