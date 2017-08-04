@@ -1,6 +1,10 @@
+import os
 import functools
 import inspect
 from asyncio import web
+from urllib import parse
+import logging
+import asyncio
 
 
 def get_params(fn):
@@ -142,8 +146,8 @@ class RequestHandler(object):
                         return web.HTTPBadRequest(
                             text='JSON body must be object')
                     kw = params
-                elif (ct.startwith('application/x-www-form-urlencoded') or
-                      ct.startwith('multipart/form-data')):
+                elif (ct.startswith('application/x-www-form-urlencoded') or
+                      ct.startswith('multipart/form-data')):
                     # `application/x-www-form-urlencoded` - most normal POST
                     # method, if we do not set <form> enctype propery, it would
                     # be sent in this way
@@ -159,3 +163,98 @@ class RequestHandler(object):
                     return web.HTTPBadRequest(
                         text='Unsupported content-type {}'.format(
                             request.content_type))
+            if request.method == 'GET':
+                qs = request.query_string
+                if qs:
+                    kw = dict()
+                    for k, v in parse.parse_qs(qs, True).items():
+                        # parse.parse_qs parse a query string argument (data
+                        # type of application/x-www-form-urlencoded), data are
+                        # returned in form of dict, the dict keys are the unique
+                        # query variable names and the values are lists of
+                        # values for each name.
+                        kw[k] = v[0]
+        if kw is None:
+            kw = dict(**request.match_info)
+            # match_info would return one dict and all keyword only parameters
+            # obtained from request would be stored in this dict.
+        else:
+            if not self._has_var_kw_arg and self._named_kw_arg:
+                # if there is not variable keyword but there is named keyword
+                # WHY?
+                copy = dict()
+                for name in self._named_kw_arg:
+                    # remove all the unnamed kw
+                    if name in kw:
+                        copy[name] = kw[name]
+                kw = copy
+            for k, v in request.match_info.items():
+                if k in kw:
+                    logging.warning('Duplicate arg name in named'
+                                    'arg and kw args: {}'.format(k))
+                kw[k] = v
+        if self._has_request_arg:
+            kw['request'] = request
+        if self._get_required_kw_args:
+            for name in self._get_required_kw_args:
+                if name not in kw:
+                    return web.HTTPBadRequest('Missing argument'
+                                              '{}'.format(name))
+        logging.info('call with args: {}'.format(str(kw)))
+        try:
+            r = await self._func(**kw)
+            return r
+        except APIError as e:
+            return dict(error=e.error, data=e.data, message=e.message)
+
+
+def add_static(app):
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    app.router.add_static('/static/', path)
+    # app is one object within aiohttp module
+    logging.info('add static {} => {}'.format('/static/', path))
+
+
+def add_route(app, fn):
+    # one simple URL handler function
+    method = getattr(fn, '__method__', None)
+    path = getattr(fn, '__route__', None)
+    if path is None or method is None:
+        raise ValueError('@get or @post not defined in {}'.format(str(fn)))
+    if not asyncio.iscoroutine(fn) and not inspect.isgeneratorfunction(fn):
+        fn = asyncio.coroutine(fn)
+        # estimate the function to see whether it is coroutine function or
+        # generator
+        # if neither, change it to one coroutine
+    logging.info('add route {} {} => {} ({})'.format(
+        method, path, fn.__name__,
+        ','.join(inspect.signature(fn).parameters.key())))
+    app.router.add_route(method, path, RequestHandler(app, fn))
+    # because RequestHandler has function `__call__`, it is callable and since
+    # can be viewed as one handler
+
+
+def add_routes(app, module_name):
+    n = module_name.rfind('.')
+    # rfind would return where is the character last appear, if it did not
+    # appear, it would return -1
+    if n == (-1):
+        mod = __import__(module_name, globals(), locals())
+    else:
+        name = module_name
+        mod = getattr(__import__(module_name[:n], globals(), locals(),
+                                 [name], 0), name)
+        # ergodic the imported module to get function, because we used decorator
+        # @post and @get, there would be attribute `__method__` and `__route__`
+        # assume we the module name is `aaa.bbb`, `bbb` would be function within
+        # the module `aaa`, we only need to import the module `aaa`
+        for attr in dir(mod):
+            # dir() return attributes of module
+            if attr.startswith('_'):
+                continue
+            fn = getattr(mod, attr)
+            if callable(fn):
+                method = getattr(fn, '__method__', None)
+                path = getattr(fn, '__route__', None)
+                if method and path:
+                    add_route(app, fn)
