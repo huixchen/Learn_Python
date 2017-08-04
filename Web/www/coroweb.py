@@ -1,10 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Used resources:
+# 1. http://blog.csdn.net/qq_38801354/article/details/73008111
+# 2. https://github.com/KaimingWan/PureBlog/blob/master/www/app.py
+# 3. https://docs.python.org/3.6/library/inspect.html#inspect.Parameter.kind
+# 4. http://www.imooc.com/article/13053
+# 5. https://imququ.com/post/four-ways-to-post-data-in-http.html
+
 import os
 import functools
 import inspect
-from asyncio import web
+from aiohttp import web
 from urllib import parse
 import logging
 import asyncio
+from apis import APIError
 
 
 def get_params(fn):
@@ -66,7 +77,7 @@ def has_request_arg(fn):
     params = get_params(fn)
     sig = inspect.signature(fn)
     found = False
-    for name, param in params:
+    for name, param in params.items():
         if name == 'request':
             found = True
             continue
@@ -83,7 +94,7 @@ def has_request_arg(fn):
             # although I am a little confused why not just say it is
             # `POSITIONAL_OR_KEYWORD`, one potential reason is that there is
             # another kind of parameter, although it has been few used now
-        return True
+    return True
 
 
 def get(path):
@@ -129,7 +140,7 @@ class RequestHandler(object):
         # and where does the function like `content_type`, `json` from
         kw = None
         if (self._has_var_kw_arg or self._has_named_kw_arg
-                or self.get_required_kw_args):
+                or self._get_required_kw_args):
             if request.method == 'POST':
                 if not request.content_type:
                     # tell whether there is content-type, normally content-type
@@ -198,8 +209,7 @@ class RequestHandler(object):
         if self._get_required_kw_args:
             for name in self._get_required_kw_args:
                 if name not in kw:
-                    return web.HTTPBadRequest('Missing argument'
-                                              '{}'.format(name))
+                    return web.HTTPBadRequest(text = 'Missing argument{}'.format(name))
         logging.info('call with args: {}'.format(str(kw)))
         try:
             r = await self._func(**kw)
@@ -217,6 +227,7 @@ def add_static(app):
 
 def add_route(app, fn):
     # one simple URL handler function
+    logging.info('start add route')
     method = getattr(fn, '__method__', None)
     path = getattr(fn, '__route__', None)
     if path is None or method is None:
@@ -228,7 +239,7 @@ def add_route(app, fn):
         # if neither, change it to one coroutine
     logging.info('add route {} {} => {} ({})'.format(
         method, path, fn.__name__,
-        ','.join(inspect.signature(fn).parameters.key())))
+        ','.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app, fn))
     # because RequestHandler has function `__call__`, it is callable and since
     # can be viewed as one handler
@@ -248,13 +259,13 @@ def add_routes(app, module_name):
         # @post and @get, there would be attribute `__method__` and `__route__`
         # assume we the module name is `aaa.bbb`, `bbb` would be function within
         # the module `aaa`, we only need to import the module `aaa`
-        for attr in dir(mod):
-            # dir() return attributes of module
-            if attr.startswith('_'):
-                continue
-            fn = getattr(mod, attr)
-            if callable(fn):
-                method = getattr(fn, '__method__', None)
-                path = getattr(fn, '__route__', None)
-                if method and path:
-                    add_route(app, fn)
+    for attr in dir(mod):
+        # dir() return attributes of module
+        if attr.startswith('_'):
+            continue
+        fn = getattr(mod, attr)
+        if callable(fn):
+            method = getattr(fn, '__method__', None)
+            path = getattr(fn, '__route__', None)
+            if method and path:
+                add_route(app, fn)
