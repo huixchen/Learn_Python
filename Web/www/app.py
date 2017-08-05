@@ -11,7 +11,7 @@ from datetime import datetime
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 
-# from config import configs
+from config import configs
 import orm
 
 from coroweb import add_routes, add_static
@@ -109,7 +109,6 @@ async def response_factory(app, handler):
                 resp.content_type = 'application/json; charset=utf-8'
                 return resp
             else:
-                r['__user__'] = request.__user__
                 # if there is `template`, it means it should use jinja2 module
                 resp = web.Response(body=app['__templating__'].get_template(
                     template).render(**r).encode('utf-8'))
@@ -142,7 +141,7 @@ def datetime_filter(t):
 
 
 async def init(loop):
-    # await orm.create_pool(loop=loop, **config.db)
+    await orm.create_pool(loop=loop, **configs.db)
     app = web.Application(loop=loop,
                           middlewares=[logger_factory, response_factory])
     init_jinja2(app, filters=dict(datetime=datetime_filter))

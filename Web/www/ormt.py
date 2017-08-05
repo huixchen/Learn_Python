@@ -1,9 +1,11 @@
 import orm
 from model import User, Blog, Comment
 import asyncio
+from config import configs
+
 
 async def test():
-    await orm.create_pool(loop=loop, user='root', password='168859', db='awesome')
+    await orm.create_pool(loop=loop, **configs.db)
 
     u = User(name='Tdedafastad', email='dtefasdst@aad', passwd='d12ad31', image='addaa')
 

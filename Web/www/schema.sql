@@ -4,7 +4,7 @@ create database awesome;
 
 use awesome;
 
-grant select, insert, update, delete on awesome.* to 'root'@'localhost' identified by 'xxxx';
+grant select, insert, update, delete on awesome.* to 'awesome-web'@'localhost' identified by 'awesome-web';
 
 
 create table users (
