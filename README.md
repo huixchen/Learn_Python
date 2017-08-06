@@ -1,2 +1,2 @@
-# CodeWars
+# Learn Python
 
