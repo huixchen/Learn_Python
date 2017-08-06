@@ -286,24 +286,28 @@ class Model(dict, metaclass=ModelMetaclass):
         # it is function of the class, so it should be cls.__select__ instead of
         # self.__select__
         if where:
-            sql = sql + 'where' + where
+            sql = sql + ' where ' + where
+            # the origin method used here is use list to add together and join
+            # the list which could be better, the mistake i made was i did not
+            # add space around the `where`, `order` etc.
         if args is None:
             args = []
         orderBy = kw.get('orderBy', None)
         if orderBy:
-            sql = sql + 'order by' + orderBy
-        limit = kw.get('limit', None)
+            sql = sql + ' order by ' + orderBy
+        limit = kw.get(' limit', None)
         # dict 提供get方法 指定放不存在时候返回后学的东西 比如a.get('Fuck',None)
         if limit is not None:
-            sql = sql + 'limit'
+            sql = sql + ' limit '
             if isinstance(limit, int):
-                sql = sql + '?'
+                sql = sql + ' ? '
                 args.append(limit)
             elif isinstance(limit, tuple) and len(limit) == 2:
-                sql = sql + '?' * 2
+                sql = sql + ' ? ' * 2
                 args.extend(limit)
             else:
                 raise ValueError('Invalid limit value: {}'.format(str(limit)))
+        logging.info('this is findAAAAAAAAAAAAAAL sql {}'.format(sql))
         rs = await select(sql, args)
         return [cls(**r) for r in rs]
 

@@ -94,7 +94,7 @@ def has_request_arg(fn):
             # although I am a little confused why not just say it is
             # `POSITIONAL_OR_KEYWORD`, one potential reason is that there is
             # another kind of parameter, although it has been few used now
-    return True
+    return found
 
 
 def get(path):
