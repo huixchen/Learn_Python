@@ -129,15 +129,15 @@ async def response_factory(app, handler):
 def datetime_filter(t):
     delta = int(time.time() - t)
     if delta < 60:
-        return u'One minute ago'
+        return 'One minute ago'
     if delta < 3600:
-        return u'{} minutes ago'.format(delta // 60)
+        return '{} minutes ago'.format(delta // 60)
     if delta < 86400:
-        return u'{} hours ago'.format(delta // 3600)
+        return '{} hours ago'.format(delta // 3600)
     if delta < 604800:
-        return u'{} days ago'.format(delta // 806400)
+        return '{} days ago'.format(delta // 806400)
     dt = datetime.fromtimestamp(t)
-    return dt
+    return "{}/{}/{}".format(dt.year, dt.month, dt.day)
 
 
 async def init(loop):
