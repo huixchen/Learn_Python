@@ -6,6 +6,7 @@ import json
 import time, re, hashlib
 from apis import APIError, APIValueError
 from config import configs
+import logging
 
 
 COOKIE_NAME = "awesession"
@@ -62,7 +63,8 @@ async def handler_url_blog(request):
     ]
     return {
         '__template__': 'blogs.html',
-        'blogs': blogs
+        'blogs': blogs,
+        'user': request.__user__,
     }
 
 
@@ -85,4 +87,61 @@ async def handler_url_users(request):
 def register(request):
     return {
         "__template__": "register.html"
+    }
+
+
+@post('/api/authenticate')
+async def authenticate(*, email, passwd):
+    if not email:
+        raise APIValueError('email', 'Invalid email')
+    if not passwd:
+        raise APIValueError('password', 'Invalid password')
+    logging.info('this is emmmmmmmmmmmmmm {}'.format(email))
+    users = await User.findAll(where='email=?', args=[email])
+    if len(users) == 0:
+        raise APIValueError('email', 'Email does not exist')
+    user = users[0]
+    sha1 = hashlib.sha1('{}:{}'.format(user.id, passwd).encode('utf-8'))
+    # sha1.update(user.id.encode('utf-8'))
+    # sha1.update(b':')
+    # sha1.update(passwd.encode('utf-8'))
+    if sha1.hexdigest() != user.passwd:
+        raise APIValueError('password', 'invalid password')
+    r = web.Response()
+    r.set_cookie(COOKIE_NAME, user2cookie(user, 86400),
+                 max_age=86400, httponly=True)
+    user.passwd = '*******'
+    r.content_type = 'application/json'
+    r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
+    return r
+
+
+async def cookie2user(cookie_str):
+    if not cookie_str:
+        return None
+    try:
+        L = cookie_str.split('-')
+        if len(L) != 3:
+            return None
+        uid, expires, sha1 = L
+        if float(expires) < time.time():
+            return None
+        user = await User.find(uid)
+        if user is None:
+            return None
+        s = '{}-{}-{}-{}'.format(uid, user.passwd, expires, _COOKIE_KEY)
+        if sha1 != hashlib.sha1(s.encode('utf-8')).hexdigest():
+            logging.info('invalid sha1')
+            return None
+        user.passwd = "******"
+        return user
+    except Exception as e:
+        logging.exception(e)
+        return None
+
+
+@get('/signin')
+def signin():
+    return {
+        '__template__': 'signin.html'
     }

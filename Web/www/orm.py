@@ -282,6 +282,8 @@ class Model(dict, metaclass=ModelMetaclass):
 
     @classmethod
     async def findAll(cls, where=None, args=None, **kw):
+        logging.info('this is where {}'.format(where))
+        logging.info('this is args {}'.format(args))
         sql = cls.__select__
         # it is function of the class, so it should be cls.__select__ instead of
         # self.__select__
