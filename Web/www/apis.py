@@ -14,7 +14,7 @@ class APIValueError(APIError):
         super(APIValueError, self).__init__('Value: invalid', field, message)
 
 
-class APIResourceNotfoundError(APIError):
+class APIResourceNotFoundError(APIError):
     def __init__(self, field, message=""):
         super(APIResourceNotfoundError, self).__init__("Value: Notfound",
                                                        field, message)

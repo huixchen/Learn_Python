@@ -1,0 +1,84 @@
+{% extends '__base__.html' %}
+
+{% block title %} {{blog.name}} {% endblock %}
+
+{% block beforehead %}
+    <script>
+var comment_url = '/api/blogs/{{blog.id}}/comments'
+
+$(function () {
+    var $form = $('#form-comment')
+        $form.submit(function (e) {
+            e.preventDefault()
+                $form.showFormError('')
+                var content = $form.find('textarea').val().trim()
+                if (content == ''){
+                    return $form.showFormError('Please enter your comments')
+                }
+            $form.postJSON(comment_url, { content: content }, function (err, result) {
+                if (err) {
+                    return $form.showFormError(err)
+                }
+                refresh()
+            })
+        })
+})
+    </script>
+{% endblock %}
+{% block content %}
+    <div class='uk-width-medium-3-4'>
+        <article class='uk-article'>
+            <h1 class='uk-article-title'> {{ blog.name }}</h1>
+                <p class='uk-article-meta'>
+                    Posted on: {{ blog.created_at|datetime }}
+                </p>
+                <p>
+                    {{ blog.content | safe }}
+                </p>
+        </article>
+
+
+        <hr class='uk-article-divider'>
+        {% if user %}
+            <h3> Post your comments </p3>
+                <header class='uk-comment-header'>
+                <article class='uk-comment'>
+                    <img class='uk-coment-avatar uk-border-cicle' width='50' height='50' src='{{user.image}}'>
+                    <h4 class='uk-comment-title'>{{ user.name }}</h4>
+                </header>
+                <div class='uk-comment-body'>
+                    <form id='form-comment' class='uk-form'>
+                        <div class='uk-alert uk-alert-danger uk-hidden'></div>
+                        <div class='uk-form-row'>
+                            <textarea rows='6' placeholder='Comment..' style='width:100%;resize:none;'></textarea>
+                        </div>
+                        <div class='uk-form-row'>
+                            <button type='submit' class='uk-button uk-button-primary'><i class='uk-icon-comment'></i> Comment </button>
+                        </div>
+                    </form>
+                </div>
+                </article>
+                <hr class='uk-article-divider'>
+        {% endif %}
+        <h3> Latest comments </h3>
+        <ul class='uk-comment-list'>
+            {% for comment in comments %}
+                <li>
+                    <article class='uk-comment'>
+                        <header class='uk-comment-header'>
+                            <img class='uk-comment-avatar uk-border-circle' width='50' height='50' src='{{comment.user_image}}'>
+                            <h4 class='uk-comment-title'>{{ comment.user_name }} {% if comment.user_id==blog.user_id %} (Author){% endif %}</h4>
+                            <p class='uk-comment-meta'>{{comment.created_at | datetime}}</p>
+                        </header>
+                        <div class='uk-comment-body'>
+                            {{ comment.content | safe }}
+                        </div>
+                    </article>
+                </li>
+            {% else %}
+                <p> No comments yet</p>
+            {% endfor %}
+        </ul>
+    </div>
+
+{% endblock %}

@@ -321,6 +321,7 @@ class Model(dict, metaclass=ModelMetaclass):
         if affected != 1:
             logging.warn(
                 'failed to remove, affected row: {}'.format(len(affected)))
+        logging.info('deleted {} rows'.format(affected))
 
     @classmethod
     async def findNumber(cls, selectField, where=None, args=None):

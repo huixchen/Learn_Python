@@ -47,10 +47,15 @@
                         {% if user %}
                         <li class="uk-parent" data-uk-dropdown>
                             <a href="#0"><i class="uk-icon-user"></i>{{ user.name }}</a>
+                            
                             <div class="uk-dropdown uk-dropdown-navbar">
                                 <ul class="uk-nav uk-nav-navbar">
                                         <li><a href="/signout"><i class="uk-icon-sign-out"></i> 登出</a></li>
-                                    </ul>
+                                        {% if user.admin %}
+                                            <li><a href='/manage/blogs'><i class='uk-icon-magic'></i> Manage Blogs </a></li>
+                                            <li><a href='#'><i class='uk-icon-ban'></i> Manage Comments </a></li>
+                                        {% endif %}
+                                </ul>
                             </div>
                         </li>
                         {% else %}

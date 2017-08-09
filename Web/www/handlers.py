@@ -1,10 +1,10 @@
 import asyncio
 from coroweb import get, post
-from model import User, Blog, next_id
+from model import User, Blog, Comment, next_id
 from aiohttp import web
 import json
 import time, re, hashlib
-from apis import APIError, APIValueError, APIPermissionError, Page
+from apis import APIError, APIValueError, APIPermissionError, APIResourceNotFoundError, Page
 from config import configs
 import logging
 
@@ -59,20 +59,20 @@ async def api_register_user(*, name, email, passwd):
 
 
 @get('/')
-async def handler_url_blog(request):
+async def handler_url_blog(request, *, page='1'):
     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-    blogs = await Blog.findAll()
+    page_index = get_page_index(page)
+    num = await Blog.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, blogs=())
+    blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return {
         '__template__': 'blogs.html',
         'blogs': blogs,
         'user': request.__user__,
+        'page': p,
     }
-
-
-@get('/greeting')
-async def handler_url_greeting(*, name, request):
-    body = '<h1>aaa: /greeting {}</h1>'.format(name)
-    return body
 
 
 @get('/users')
@@ -208,8 +208,72 @@ async def api_blogs(*, page='1'):
 
 
 @get('/manage/blogs')
-def manage_blogs(*, page='1'):
+def manage_blogs(*, page='1',request):
     return {
         '__template__': 'manage_blogs.html',
-        'page_index': get_page_index(page)
+        'page_index': get_page_index(page),
+        'user': request.__user__,
     }
+
+
+@get('/manage/blogs/edit')
+def manage_blogs_edit(*, id=1, request):
+    return {
+        '__template__': 'manage_blog_edit.html',
+        'id': id,
+        'action': '/api/blogs/{}'.format(id),
+        'user': request.__user__,
+    }
+
+
+@get('/api/blogs/{id}')
+async def api_get_blog(*, id):
+    blog = await Blog.find(id)
+    return blog
+
+
+@post('/api/blogs/{id}/delete')
+async def api_delete_blog(*, id, request):
+    check_admin(request)
+    r = await Blog.find(id)
+    r = await r.remove()
+    return dict(id=id)
+
+
+@get('/blog/{id}')
+async def get_blog(request, *, id):
+    blog = await Blog.find(id)
+    comments = await Comment.findAll(where='blog_id=?', args=[blog.id])
+    return {
+        '__template__': 'blog.html',
+        'blog': blog,
+        'user': request.__user__,
+        'comments': comments,
+    }
+
+
+@post('/api/blogs/{id}/comments')
+async def api_create_comment(id, request, *, content):
+    blog = await Blog.find(id)
+    if blog is None:
+        raise APIResourceNotFoundError('blog')
+    if not content or not content.strip():
+        raise APIValueError('content')
+    if not request.__user__:
+        raise APIPermissionError('Please sign first')
+    comment = Comment(blog_id=blog.id, user_id=request.__user__.id,
+                      user_image=request.__user__.image, content=content,
+                      created_at=time.time(), user_name=request.__user__.name)
+    await comment.save()
+    return comment
+
+
+@get('/api/comments')
+async def api_comments(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Comment.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, comments=())
+    comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, comments=comments)
