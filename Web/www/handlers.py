@@ -12,6 +12,8 @@ import logging
 COOKIE_NAME = "awesession"
 # to name in set_cookie
 _COOKIE_KEY = configs.session.secret
+_RE_EMAIL = re.compile(r"^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$")
+_RE_SHA1 = re.compile(r"^[0-9a-f]{40}$")
 
 
 def user2cookie(user, max_age):
@@ -26,8 +28,39 @@ def check_admin(request):
         raise APIPermissionError()
 
 
-_RE_EMAIL = re.compile(r"^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$")
-_RE_SHA1 = re.compile(r"^[0-9a-f]{40}$")
+async def cookie2user(cookie_str):
+    if not cookie_str:
+        return None
+    try:
+        L = cookie_str.split('-')
+        if len(L) != 3:
+            return None
+        uid, expires, sha1 = L
+        if float(expires) < time.time():
+            return None
+        user = await User.find(uid)
+        if user is None:
+            return None
+        s = '{}-{}-{}-{}'.format(uid, user.passwd, expires, _COOKIE_KEY)
+        if sha1 != hashlib.sha1(s.encode('utf-8')).hexdigest():
+            logging.info('invalid sha1')
+            return None
+        user.passwd = "******"
+        return user
+    except Exception as e:
+        logging.exception(e)
+        return None
+
+
+def get_page_index(page_str):
+    p = 1
+    try:
+        p = int(page_str)
+    except ValueError as e:
+        pass
+    if p < 1:
+        p = 1
+    return p
 
 
 @post("/api/users")
@@ -75,14 +108,6 @@ async def handler_url_blog(request, *, page='1'):
     }
 
 
-@get('/users')
-async def handler_url_users(request):
-    users = await User.findAll()
-    return {
-        '__template__': 'test.html',
-        'users': users
-    }
-
 
 @get('/register')
 def register(request):
@@ -116,28 +141,7 @@ async def authenticate(*, email, passwd):
     return r
 
 
-async def cookie2user(cookie_str):
-    if not cookie_str:
-        return None
-    try:
-        L = cookie_str.split('-')
-        if len(L) != 3:
-            return None
-        uid, expires, sha1 = L
-        if float(expires) < time.time():
-            return None
-        user = await User.find(uid)
-        if user is None:
-            return None
-        s = '{}-{}-{}-{}'.format(uid, user.passwd, expires, _COOKIE_KEY)
-        if sha1 != hashlib.sha1(s.encode('utf-8')).hexdigest():
-            logging.info('invalid sha1')
-            return None
-        user.passwd = "******"
-        return user
-    except Exception as e:
-        logging.exception(e)
-        return None
+
 
 
 @get('/signin')
@@ -181,18 +185,6 @@ def manage_create_blog(request):
         'action': '/api/blogs',
         'user': request.__user__,
     }
-
-
-
-def get_page_index(page_str):
-    p = 1
-    try:
-        p = int(page_str)
-    except ValueError as e:
-        pass
-    if p < 1:
-        p = 1
-    return p
 
 
 @get('/api/blogs')
