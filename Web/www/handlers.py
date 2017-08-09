@@ -203,7 +203,6 @@ async def api_blogs(*, page='1'):
     if num == 0:
         return dict(page=p, blogs=())
     blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
-    logging.info('this is limiiiiiiiiiiiiiit {}'.format(p.limit))
     return dict(page=p, blogs=blogs)
 
 
@@ -277,3 +276,50 @@ async def api_comments(*, page='1'):
         return dict(page=p, comments=())
     comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, comments=comments)
+
+
+@get('/manage/comments')
+async def manage_comments(request, *, page='1'):
+    user = request.__user__
+    page_index = get_page_index(page)
+    return {
+        '__template__': 'manage_comments.html',
+        'user': user,
+        'page': page_index,
+    }
+
+
+@get('/api/users')
+async def api_users(*, page='1'):
+    page_index = get_page_index(page)
+    num = await User.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(p=p, users=())
+    users = await User.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, users=users)
+
+
+@get('/manage/users')
+def manage_users(request, *, page='1'):
+    return {
+        '__template__': 'manage_users.html',
+        'user': request.__user__,
+        'page': page,
+    }
+
+
+@post('/api/users/{id}/delete')
+async def manage_delete_user(*, id, request):
+    check_admin(request)
+    user = await User.find(id)
+    await user.remove()
+    return dict(id=id)
+
+
+@post('/api/comments/{id}/delete')
+async def manage_delete_comment(*, id, request):
+    check_admin(request)
+    comment = await Comment.find(id)
+    await comment.remove()
+    return dict(id=id)
