@@ -7,6 +7,7 @@ import time, re, hashlib
 from apis import APIError, APIValueError, APIPermissionError, APIResourceNotFoundError, Page
 from config import configs
 import logging
+import markdown2
 
 
 COOKIE_NAME = "awesession"
@@ -234,6 +235,7 @@ async def api_delete_blog(*, id, request):
 @get('/blog/{id}')
 async def get_blog(request, *, id):
     blog = await Blog.find(id)
+    blog.content = markdown2.markdown(blog.content)
     comments = await Comment.findAll(where='blog_id=?', args=[blog.id])
     return {
         '__template__': 'blog.html',
