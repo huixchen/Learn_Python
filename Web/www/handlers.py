@@ -208,15 +208,32 @@ def manage_blogs(*, page='1',request):
     }
 
 
-@get('/manage/blogs/edit')
-def manage_blogs_edit(*, id=1, request):
+@get('/manage/blogs/edit/{id}')
+def manage_blogs_edit(id, request):
     return {
         '__template__': 'manage_blog_edit.html',
         'id': id,
-        'action': '/api/blogs/{}'.format(id),
+        'action': '/api/blogs/modify',
         'user': request.__user__,
     }
 
+
+@post('/api/blogs/modify')
+async def api_blogs_modify(request, *, id, name, summary, content):
+    logging.info('I am changing {}'.format(id))
+    if not name or not name.strip():
+        raise APIValueError('title', 'title can not be empty')
+    if not content or not content.strip():
+        raise APIValueError('content', 'content can not be empty')
+    if not summary or not summary.strip():
+        raise APIValueError('summary', 'summary can not be empty')
+    blog = await Blog.find(id)
+    blog.name =name
+    blog.summary = summary
+    blog.content = content
+
+    await blog.update()
+    return blog
 
 @get('/api/blogs/{id}')
 async def api_get_blog(*, id):
