@@ -134,7 +134,7 @@ def datetime_filter(t):
     if delta < 86400:
         return '{} hours ago'.format(delta // 3600)
     if delta < 604800:
-        return '{} days ago'.format(delta // 806400)
+        return '{} days ago'.format(delta // 86400)
     dt = datetime.fromtimestamp(t)
     return "{}/{}/{}".format(dt.year, dt.month, dt.day)
 
