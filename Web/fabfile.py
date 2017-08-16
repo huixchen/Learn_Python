@@ -5,7 +5,7 @@ from fabric.api import *
 
 env.user = 'cuichen'
 env.sudo_user = 'root'
-env.hosts = 'ubuntu@ec2-34-213-152-94.us-west-2.compute.amazonaws.com'
+env.hosts = 
 
 db_user = 'awesome'
 db_password = 'awesome'
