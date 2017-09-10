@@ -310,7 +310,6 @@ class Model(dict, metaclass=ModelMetaclass):
                 # limit 5, 10 means get from no 5 to no 10 from results
             else:
                 raise ValueError('Invalid limit value: {}'.format(str(limit)))
-        logging.info('this is findAAAAAAAAAAAAAAL sql {}'.format(sql))
         rs = await select(sql, args)
         return [cls(**r) for r in rs]
 
@@ -327,7 +326,6 @@ class Model(dict, metaclass=ModelMetaclass):
     async def findNumber(cls, selectField, where=None, args=None):
         sql = 'select {} _num_ from {}'.format(selectField, cls.__table__)
         # _num_ here is as the same to `as _num_'
-        logging.info('this is SQQQQQQQQQQQQQQL {}'.format(sql))
         if where:
             sql = sql + 'where' + where
         rows = await select(sql, args, 1)
